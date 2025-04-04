@@ -12,3 +12,7 @@ wheels/
 .env
 
 *.sqlite3
+
+ruff_cache/
+
+.idea

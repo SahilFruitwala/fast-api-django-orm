@@ -1,10 +1,11 @@
 # config/settings.py
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent # Points to project root
+BASE_DIR = Path(__file__).resolve().parent.parent  # Points to project root
 
 # Load .env file variables (optional for SQLite default, but good practice)
 load_dotenv(BASE_DIR / '.env')
@@ -17,7 +18,7 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # Define apps that contain your models
 INSTALLED_APPS = [
-    'db_app', # Your app containing models (created later)
+    'db_app',  # Your app containing models (created later)
 ]
 
 # --- Database Configuration for SQLite ---
@@ -43,4 +44,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Timezone settings (recommended)
 USE_TZ = True
 TIME_ZONE = 'UTC'
-
