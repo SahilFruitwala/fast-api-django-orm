@@ -1,3 +1,5 @@
+from typing import List
+
 from django.db.utils import IntegrityError
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, model_validator  # For request/response models
@@ -21,7 +23,6 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: bytes
-    salt: bytes | None = None  # Optional field for salt
     
     @model_validator(mode='before')
     @classmethod
@@ -30,9 +31,23 @@ class UserCreate(UserBase):
         if not password:
             raise ValueError('Password is required')
         
-        hashed_password, salt = get_hashed_password(password)
-        values['password'] = hashed_password
-        values['salt'] = salt
+        values['password'] = get_hashed_password(password)
+        return values
+
+class UserUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    password: str | None = None
+    new_password: str | None = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_password(cls, values):
+        password = values.get('password')
+        new_password = values.get('new_password')
+        if new_password and not password:
+            raise ValueError('Password is required')
+
         return values
 
 
@@ -47,14 +62,14 @@ class User(UserBase):  # For response model
 
 
 # Read All
-def get_all_users_db():
+def get_all_users_db() -> List[UserModel]:
     # .all() is lazy, convert to list to execute the query
     users = UserModel.objects.all()
     return users
 
 
 # Create
-def create_user_db(user_data: UserCreate):
+def create_user_db(user_data: UserCreate) -> UserModel:
     try:
         user = UserModel.objects.create(**user_data.model_dump())
     except IntegrityError as e:
@@ -63,7 +78,7 @@ def create_user_db(user_data: UserCreate):
 
 
 # Read One
-def get_user_db(user_id: int):
+def get_user_db(user_id: int) -> UserModel:
     try:
         user = UserModel.objects.get(pk=user_id)
         return user
@@ -71,14 +86,21 @@ def get_user_db(user_id: int):
         raise HTTPException(status_code=404, detail=str(e)) from e
 
 
-# Update (example - adjust fields as needed)
-def update_user_db(user_id: int, user_data: UserCreate):
-    user = get_user_db(user_id)
-    # Update fields
-    user.name = user_data.name
-    user.email = user_data.email
-    user.save()  # Pass specific fields to update for efficiency
-    return user
+# Update
+def update_user_db(user_id: int, user_data: UserUpdate) -> UserModel:
+    existing_user = get_user_db(user_id)
+
+    if user_data.new_password:
+        if not is_correct_password(user_data.password, existing_user.password):
+            raise HTTPException(status_code=400, detail='Password does not match.')
+        new_password = get_hashed_password(user_data.new_password)
+        existing_user.password = new_password
+
+    existing_user.name = user_data.name or existing_user.name
+    existing_user.email = user_data.email or existing_user.email
+    existing_user.save()
+
+    return existing_user
 
 
 # Delete
@@ -90,43 +112,33 @@ def delete_user_db(user_id: int):
 
 @router.get('/', response_model=list[User])
 def read_users():
-    """
-    Retrieve all users from the database.
-    """
+    """Retrieve all users from the database."""
     users = get_all_users_db()
     return users
 
 
 @router.post('/', response_model=User, status_code=201)
 def create_user(user_in: UserCreate):
-    """
-    Create a new User in the database.
-    """
+    """Create a new User in the database."""
     new_user = create_user_db(user_in)
     return new_user
 
 
 @router.get('/{user_id}', response_model=User)
 def read_user(user_id: int):
-    """
-    Retrieve a specific User by its ID.
-    """
+    """Retrieve a specific User by its ID."""
     user = get_user_db(user_id)
     return user
 
 
 @router.put('/{user_id}', response_model=User)
-def update_user(user_id: int, user_in: UserCreate):
-    """
-    Update an existing User by its ID.
-    """
-    updated_user = update_user_db(user_id, user_in)
+def update_user(user_id: int, user_data: UserUpdate):
+    """Update an existing User by its ID."""
+    updated_user = update_user_db(user_id, user_data)
     return updated_user
 
 
 @router.delete('/{user_id}', status_code=204)  # 204 No Content on success
 def delete_user(user_id: int):
-    """
-    Delete an User by its ID.
-    """
+    """Delete a User by its ID."""
     return delete_user_db(user_id)

@@ -11,7 +11,6 @@ class User(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(max_length=100, unique=True)
     password = models.BinaryField()  # Store hashed passwords
-    salt = models.BinaryField()  # Store salt for password hashing
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
