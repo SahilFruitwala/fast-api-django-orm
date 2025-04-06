@@ -13,8 +13,6 @@ wheels/
 
 *.sqlite3
 
-.pytest_cache
-
 ruff_cache/
 
 .idea
@@ -22,5 +20,3 @@ ruff_cache/
 *coverage*
 
 .vscode
-
-.DS_Store

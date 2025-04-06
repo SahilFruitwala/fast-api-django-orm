@@ -1,0 +1,48 @@
+[project]
+name = "fast-django"
+version = "0.1.0"
+description = "Leverages FastAPI's speed and Django's robust ORM for building efficient Python web applications."
+readme = "README.md"
+requires-python = ">=3.13"
+
+dependencies = [
+    "asgiref>=3.8.1",
+    "bcrypt>=4.3.0",
+    "django>=5.2",
+    "fastapi>=0.115.12",
+    "psycopg2-binary>=2.9.10",
+    "python-dotenv>=1.1.0",
+    "ruff>=0.11.3",
+    "uvicorn[standard]>=0.34.0",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["db_app/migrations/*"]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "C",
+    "B",
+    "UP",
+    "YTT",
+    "S",
+    "PGH",
+    "SIM",
+    "TID",
+    "PIE",
+    "ARG",
+]
+ignore = [
+    "S101",
+]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = "lf"
