@@ -33,6 +33,7 @@ def test_create_account(client: TestClient, test_user: User):  # Use standard de
     acc_exists = Account.objects.filter(user=test_user, name='My Savings').exists()  # Use sync .exists()
     assert acc_exists
 
+
 @pytest.mark.django_db(transaction=True)
 def test_invalid_account_type(client: TestClient, test_user: User):  # Use standard def
     """Test creating a new account for a user."""
@@ -132,7 +133,7 @@ def test_get_account_not_found(client: TestClient, test_user: User):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_get_account_wrong_user(client: TestClient, test_user: User, test_account: Account):
+def test_get_account_wrong_user(client: TestClient, _, test_account: Account):
     """Test retrieving an account belonging to a different user."""
     # Create a second user
     other_user = User.objects.create(
@@ -160,7 +161,7 @@ def test_update_account_not_found(client: TestClient, test_user: User):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_update_account_wrong_user(client: TestClient, test_user: User, test_account: Account):
+def test_update_account_wrong_user(client: TestClient, _, test_account: Account):
     """Test updating an account belonging to a different user."""
     other_user = User.objects.create(
         name='Other User',
@@ -187,7 +188,7 @@ def test_delete_account_not_found(client: TestClient, test_user: User):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_delete_account_wrong_user(client: TestClient, test_user: User, test_account: Account):
+def test_delete_account_wrong_user(client: TestClient, _, test_account: Account):
     """Test deleting an account belonging to a different user."""
     other_user = User.objects.create(
         name='Other User',

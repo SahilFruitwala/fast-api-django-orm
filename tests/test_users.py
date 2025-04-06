@@ -82,6 +82,7 @@ def test_error_on_create(client):
     data = response.json()
     assert data['detail'][0]['msg'] == 'Value error, Password is required'
 
+
 @pytest.mark.django_db(transaction=True)
 def test_get_nonexistent_user(client: TestClient):
     """Test retrieving a user ID that does not exist."""
