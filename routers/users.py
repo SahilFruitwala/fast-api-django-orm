@@ -78,7 +78,7 @@ def create_user_db(user_data: UserCreate) -> UserModel:
 # Read One
 def get_user_db(user_id: int) -> UserModel:
     try:
-        user = UserModel.objects.get(pk=user_id)
+        user = UserModel.objects.get(id=user_id)
         return user
     except UserModel.DoesNotExist as e:
         raise HTTPException(status_code=404, detail=str(e)) from e

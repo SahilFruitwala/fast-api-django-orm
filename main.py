@@ -10,8 +10,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 # Setup Django
 django.setup()
 
-from routers.users import router as users_router  # noqa: E402
 from routers.accounts import router as accounts_router  # noqa: E402
+from routers.users import router as users_router  # noqa: E402
 
 
 # --- FastAPI Application Setup ---
@@ -29,8 +29,3 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(users_router)
 app.include_router(accounts_router)
-
-
-@app.get('/')
-async def root():
-    return {'message': 'FastAPI with Django ORM is running!'}

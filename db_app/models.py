@@ -14,9 +14,6 @@ class User(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.name
-
 
 class Account(models.Model):
     """
@@ -35,9 +32,6 @@ class Account(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
-    # def __str__(self):
-    #     return f'{self.name} ({self.account_type})'
-
 
 class Category(models.Model):
     """
@@ -54,9 +48,6 @@ class Category(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f'{self.name} ({self.category_type})'
 
 
 class Transaction(models.Model):
@@ -85,9 +76,6 @@ class Transaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f'{self.date} - {self.amount} - {self.description}'
-
 
 class Budget(models.Model):
     """
@@ -102,6 +90,3 @@ class Budget(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f'{self.category.name} Budget ({self.start_date} - {self.end_date})'
