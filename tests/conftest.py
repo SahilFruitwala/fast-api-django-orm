@@ -1,10 +1,13 @@
-# tests/conftest.py
+from datetime import datetime
 import os
 from collections.abc import Generator  # No AsyncGenerator needed
+from decimal import Decimal
 
 import django
 import pytest
 from fastapi.testclient import TestClient  # Import the synchronous TestClient
+
+from enums import TransactionTypeEnum
 
 # --- Crucial: Set DJANGO_SETTINGS_MODULE early ---
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
@@ -15,7 +18,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 # --- Import your FastAPI app and models AFTER Django setup ---
-from db_app.models import Account, User  # noqa: E402
+from db_app.models import Account, User, Transaction  # noqa: E402
 from main import app as fastapi_app  # noqa: E402
 from utils import get_hashed_password  # noqa: E402
 
@@ -42,7 +45,7 @@ def client() -> Generator[TestClient, None, None]:  # Use standard Generator
 
 
 @pytest.fixture(scope='function')
-def test_user(db) -> User:  # `db` fixture provided by pytest-django
+def test_user(db) -> User:  # `db` fixture provided by pytest-django  # noqa: ARG001
     """
     Creates a test user in the database before a test runs.
     """
@@ -54,7 +57,7 @@ def test_user(db) -> User:  # `db` fixture provided by pytest-django
 
 
 @pytest.fixture(scope='function')
-def test_account(db, test_user: User) -> Account:
+def test_account(db, test_user: User) -> Account:  # noqa: ARG001
     """
     Creates a test account associated with the test_user.
     """
@@ -66,5 +69,13 @@ def test_account(db, test_user: User) -> Account:
     )  #
     return account
 
-
-# Add more fixtures for Categories, Transactions, etc. as needed
+@pytest.fixture
+def test_transaction(test_user, test_account):
+    return Transaction.objects.create(
+        user=test_user,
+        account=test_account,
+        date=datetime.now().date(),
+        amount=Decimal('50.00'),
+        description="Test Transaction",
+        transaction_type=TransactionTypeEnum.EXPENSE.value,
+    )

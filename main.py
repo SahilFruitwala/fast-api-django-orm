@@ -12,6 +12,7 @@ django.setup()
 
 from routers.accounts import router as accounts_router  # noqa: E402
 from routers.users import router as users_router  # noqa: E402
+from routers.transactions import router as transactions_router  # noqa: E402
 
 
 # --- FastAPI Application Setup ---
@@ -29,3 +30,4 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(users_router)
 app.include_router(accounts_router)
+app.include_router(transactions_router)
