@@ -42,7 +42,7 @@ def client() -> Generator[TestClient, None, None]:  # Use standard Generator
 
 
 @pytest.fixture(scope='function')
-def test_user(_) -> User:  # `db` fixture provided by pytest-django
+def test_user(db) -> User:  # `db` fixture provided by pytest-django
     """
     Creates a test user in the database before a test runs.
     """
@@ -54,7 +54,7 @@ def test_user(_) -> User:  # `db` fixture provided by pytest-django
 
 
 @pytest.fixture(scope='function')
-def test_account(_, test_user: User) -> Account:
+def test_account(db, test_user: User) -> Account:
     """
     Creates a test account associated with the test_user.
     """
