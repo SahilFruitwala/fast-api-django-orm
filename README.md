@@ -1,27 +1,46 @@
-# FastAPI with Django ORM Project
+# FastAPI with Django ORM & JWT Authentication
 
 ## Description
 
-This project demonstrates how to build a FastAPI application that uses the powerful Django ORM for database interactions, migrations, and model definitions. It provides a foundation for building robust APIs leveraging asynchronous FastAPI with the synchronous capabilities of the Django ORM via `asgiref`.
-
-This setup allows you to define Django models, run database migrations using `manage.py`, and interact with your database within FastAPI endpoints.
+This project demonstrates how to build a FastAPI application integrated with the Django ORM for database interactions, migrations, and model definitions. It uses basic email/password authentication secured with JSON Web Tokens (JWT). The setup allows defining Django models, managing database schema changes via migrations, and interacting with the database within FastAPI endpoints.
 
 ## Features
 
-* **FastAPI:** Modern, fast (high-performance) web framework for building APIs.
+* **FastAPI:** Modern, high-performance web framework for building APIs.
 * **Django ORM:** Mature and powerful Object-Relational Mapper for database interactions.
 * **Django Migrations:** Robust system for managing database schema changes.
+* **JWT Authentication:** Secure API endpoints using email/password login and JWT tokens.
 * **Pydantic:** Data validation and settings management using Python type hints.
-* **UV:** Fast Python package installer and virtual environment manager.
-* **Async/Sync Compatibility:** Uses `asgiref.sync.sync_to_async` (or FastAPI's built-in handling for `def` routes) to safely run synchronous ORM code in an async environment.
-* **Environment-Based Configuration:** Uses `.env` files for easy and secure configuration.
+* **Async/Sync Compatibility:** Handles synchronous ORM calls within the async FastAPI environment.
+* **Environment-Based Configuration:** Uses `.env` files for managing settings like database credentials and secret keys.
+* **Modular Routers:** API endpoints organized into separate routers for users, accounts, transactions, and authentication.
+* **Testing:** Includes tests using `pytest` and `TestClient`.
+
+## Project Structure
+
+* `main.py`: FastAPI application entry point.
+* `config/`: Django project configuration.
+    * `settings.py`: Django settings, reads `.env` file.
+* `db_app/`: Django app containing database models and migrations.
+    * `models.py`: Defines User, Account, Transaction, etc., models.
+    * `migrations/`: Database migration files.
+* `routers/`: FastAPI routers for different API resources.
+    * `auth.py`: Handles user login and token generation.
+    * `users.py`: User registration, profile management, password reset.
+    * `accounts.py`: Account management endpoints.
+    * `transactions.py`: Transaction management endpoints.
+* `utils.py`: Utility functions, including password hashing and JWT creation/decoding.
+* `enums.py`: Enumerations for choices like Account Type and Transaction Type.
+* `manage.py`: Django's command-line utility for administrative tasks (like migrations).
+* `tests/`: Contains Pytest tests for the API endpoints.
+* `.env` (You need to create this): Stores environment variables.
+* `requirements.txt` (You need to create this): Lists project dependencies.
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
-
-* **Python:** Version 3.8 or higher recommended.
-* **uv:** The package installer. If you don't have it, install it (e.g., `pip install uv`).
+* **Python:** Version 3.8+ recommended.
+* **uv** (or pip): Python package installer.
+* **Database System:** SQLite (default), PostgreSQL, or MySQL.
 
 ## Setup Instructions
 
@@ -32,235 +51,76 @@ Before you begin, ensure you have the following installed:
     ```
 
 2.  **Create Virtual Environment:**
-    Use `uv` to create and activate a virtual environment:
     ```bash
+    # Using uv
     uv venv
-    source .venv/bin/activate  # Linux/macOS
-    # .\.venv\Scripts\activate  # Windows PowerShell
+    source .venv/bin/activate # Linux/macOS
+    # .\.venv\Scripts\activate # Windows
+
+    # Or using Python's built-in venv
+    # python -m venv .venv
+    # source .venv/bin/activate # Linux/macOS
+    # .\.venv\Scripts\activate # Windows
     ```
 
 3.  **Install Dependencies:**
-    Install all required packages using `uv`:
+    Create a `requirements.txt` file listing all necessary packages (e.g., `fastapi`, `uvicorn[standard]`, `django`, `python-dotenv`, `bcrypt`, `PyJWT`, `passlib[bcrypt]`, `psycopg2-binary` (for PostgreSQL), `mysqlclient` (for MySQL), `pytest`, `httpx`). Then install:
     ```bash
-    # Base requirements (FastAPI, Django, Uvicorn, etc.)
-    uv pip install fastapi "uvicorn[standard]" django python-dotenv asgiref
-
-    # --- IMPORTANT: Install DATABASE DRIVER if NOT using SQLite ---
-    # Example for PostgreSQL:
-    # uv pip install psycopg2-binary
-    # Example for MySQL:
-    # uv pip install mysqlclient
+    uv pip install -r requirements.txt
+    # Or using pip
+    # pip install -r requirements.txt
     ```
-    *Note: SQLite is used by default and does not require a separate driver installation.*
 
 4.  **Configure Environment:**
-    See the **Configuration** section below to set up your `.env` file.
-
-5.  **Run Database Migrations:**
-    Apply the initial database schema:
-    ```bash
-    python manage.py migrate
-    ```
-    *(If you define new models or change existing ones in `db_app/models.py`, you'll need to run `python manage.py makemigrations db_app` followed by `python manage.py migrate` again.)*
-
-## Configuration
-
-Application settings, especially sensitive ones like database credentials and the Django secret key, are managed via environment variables loaded from a `.env` file located in the project root.
-
-1.  **Create `.env` File:**
-    Copy the example file (`.env.example` if you create one, otherwise create it manually) to `.env`:
-    ```bash
-    cp .env.example .env
-    ```
-    *(If `.env.example` doesn't exist, create a new file named `.env`)*
-
-    **IMPORTANT:** Add `.env` to your `.gitignore` file to prevent committing secrets to version control!
-
-    ```gitignore
-    # .gitignore
-    .env
-    .venv/
-    db.sqlite3 # If using SQLite default name
-    __pycache__/
-    *.pyc
-    ```
-
-2.  **Edit `.env` File:**
-    Open the `.env` file and modify the variables according to your environment and database choice. Here's a template and examples:
+    * Create a `.env` file in the project root.
+    * **Important:** Add `.env` to your `.gitignore` file to avoid committing sensitive information.
+    * Populate `.env` with the following variables, adjusting values as needed:
 
     ```dotenv
-    # .env file
+    # --- Django Settings ---
+    # Generate with: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+    DJANGO_SECRET_KEY=your_django_secret_key
+    DEBUG=True # Set to False in production
 
-    # --- Core Django Setting ---
-    # Generate a strong, unique secret key.
-    # You can generate one using: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
-    DJANGO_SECRET_KEY=your_strong_random_secret_key_here_please_change
-
-    # --- Development Setting ---
-    # Set to True to enable debug mode (shows detailed error pages, etc.)
-    # Should be False in production!
-    # DEBUG=True
+    # --- JWT Settings ---
+    # Generate a strong secret (e.g., using openssl rand -hex 32)
+    SECRET_KEY=your_jwt_secret_key
+    ALGORITHM=HS256 # Or your chosen algorithm
+    ACCESS_TOKEN_EXPIRE_MINUTES=30 # Token validity duration in minutes
 
     # --- Database Configuration ---
-    # Choose ONE of the following database configurations (or adapt as needed).
-    # The settings are read by config/settings.py
+    # Uncomment and configure ONE section based on your DB choice
 
-    # Option 1: SQLite (Default if no DB variables are set)
-    # Engine: django.db.backends.sqlite3
-    # Creates a file named db.sqlite3 in the project root by default.
-    # You usually DON'T need to set these explicitly for the default SQLite setup.
-    # DB_ENGINE=django.db.backends.sqlite3
-    # DB_NAME=db.sqlite3 # You can customize the filename here if desired
+    # Option 1: SQLite (Default)
+    DB_ENGINE=django.db.backends.sqlite3
+    DB_NAME=db.sqlite3 # Path relative to project root
 
-    # Option 2: PostgreSQL (Requires 'psycopg2-binary' or 'psycopg')
-    # Uncomment and fill these if using PostgreSQL. Also install the driver.
+    # Option 2: PostgreSQL (Requires psycopg2-binary)
     # DB_ENGINE=django.db.backends.postgresql
     # DB_NAME=your_postgres_db_name
     # DB_USER=your_postgres_user
     # DB_PASSWORD=your_postgres_password
-    # DB_HOST=localhost # Or your DB host IP/domain
-    # DB_PORT=5432      # Or your DB port
+    # DB_HOST=localhost # Or your DB host
+    # DB_PORT=5432
 
-    # Option 3: MySQL (Requires 'mysqlclient')
-    # Uncomment and fill these if using MySQL. Also install the driver.
+    # Option 3: MySQL (Requires mysqlclient)
     # DB_ENGINE=django.db.backends.mysql
     # DB_NAME=your_mysql_db_name
     # DB_USER=your_mysql_user
     # DB_PASSWORD=your_mysql_password
-    # DB_HOST=localhost # Or your DB host IP/domain
-    # DB_PORT=3306      # Or your DB port
-
-    # --- Add other environment variables as needed by your application ---
-
+    # DB_HOST=localhost # Or your DB host
+    # DB_PORT=3306
     ```
 
-3.  **How Configuration Works:**
-    * The `config/settings.py` file attempts to load variables from the `.env` file using `python-dotenv`.
-    * It then uses these environment variables (or provides defaults, like for SQLite) to configure the `DATABASES` and other Django settings required by the ORM.
-    * You generally only need to modify the `.env` file for configuration changes, not `config/settings.py`.
-
-## Database Migrations
-
-Django's migration system is used to manage database schema changes based on the models defined in `db_app/models.py`.
-
-* **Creating Migrations:** When you add or modify models in `db_app/models.py`, create a new migration file:
-    ```bash
-    python manage.py makemigrations db_app
-    ```
-* **Applying Migrations:** To apply pending migrations to your database (including the initial setup):
+5.  **Run Database Migrations:**
+    Apply the database schema defined in `db_app/models.py`:
     ```bash
     python manage.py migrate
     ```
+    *(If you modify `db_app/models.py` in the future, first create a new migration file with `python manage.py makemigrations db_app` before running `migrate`)*.
 
 ## Running the Application
 
-Use `uvicorn` to run the FastAPI development server:
-
+Start the FastAPI development server using Uvicorn:
 ```bash
 uvicorn main:app --reload
-```
-
-# FastAPI with Django ORM - cURL Commands
-
-## 1. Create a User
-```sh
-curl -X POST "http://127.0.0.1:8000/users/" \
-     -H "Content-Type: application/json" \
-     -d '{"username": "John Doe", "email": "johndoe@example.com", "password": "pass1"}'
-```
-
-## 2. Get All Users
-```sh
-curl -X GET "http://127.0.0.1:8000/users/" \
-     -H "Accept: application/json"
-```
-
-## 3. Get a Specific User by ID
-```sh
-curl -X GET "http://127.0.0.1:8000/users/1" \
-     -H "Accept: application/json"
-```
-
-## 4. Update a User by ID
-```sh
-curl -X PUT "http://127.0.0.1:8000/users/1" \
-     -H "Content-Type: application/json" \
-     -d '{"name": "John Updated", "email": "johnupdated@example.com"}'
-```
-
-## 5. Delete a User by ID
-```sh
-curl -X DELETE "http://127.0.0.1:8000/users/1"
-```
-
-## 6. Check if the API is Running
-```sh
-curl -X GET "http://127.0.0.1:8000/"
-```
-
-## 7. Handle Errors (Example: Get Non-Existent User)
-```sh
-curl -X GET "http://127.0.0.1:8000/users/999" \
-     -H "Accept: application/json"
-```
-
-## 8. Response Examples
-### Success Response (Create User)
-```json
-{
-  "id": 1,
-  "name": "John Doe",
-  "email": "johndoe@example.com",
-  "created_at": "2025-04-03T12:00:00Z"
-}
-```
-
-### Error Response (User Not Found)
-```json
-{
-  "detail": "User not found"
-}
-```
-
-> Gemini 2.5 helped me in this setup.
-
-# If I am not using async method why do I need `asynccontextmanager` in my main.py:
-
-You are correct that if you aren't using asynchronous features in your route handlers (def instead of async def), you might wonder why an async function like the lifespan manager is present.
-
-Here's the breakdown:
-
-FastAPI/ASGI is Fundamentally Async: Even if your route handlers are standard def functions (which FastAPI runs in a thread pool), the FastAPI application itself, and the ASGI server (like Uvicorn) running it, operate on an asynchronous event loop.
-
-Lifespan Protocol is Async: The lifespan context manager hooks into the ASGI Lifespan Protocol. This protocol defines specific asynchronous messages that the server sends to the application upon startup and just before shutdown. To handle these messages correctly, the function designated as the lifespan manager must be an async def function capable of interacting with the async event loop.
-
-Purpose of Lifespan: Its purpose is to execute code exactly once when the application starts up (before it begins accepting any requests) and exactly once when the application is shutting down (after processing has stopped). Common uses include:
-
-Initializing Resources: Setting up database connection pools (though less common when using Django's built-in handling), loading machine learning models into memory, establishing connections to external message queues or caches.
-Cleaning Up Resources: Gracefully closing database connections, shutting down background tasks, saving state before exiting.
-Is it Mandatory? No. If your application does not require any specific setup or teardown logic that needs to run precisely at startup or shutdown, you absolutely do not need the lifespan function. You can remove the @asynccontextmanager, the lifespan function definition, and the lifespan=lifespan argument from your FastAPI app instantiation:
-
-```python
-# main.py
-
-# ... imports ...
-# os.environ.setdefault(...)
-# django.setup()
-# from users_router import router as users_api_router
-# Remove @asynccontextmanager and the lifespan function definition
-
-# Instantiate FastAPI without the lifespan argument
-app = FastAPI(title="FastAPI + Django ORM")
-
-app.include_router(users_api_router)
-
-@app.get("/")
-def root():
-    return {"message": "FastAPI (sync endpoints) with Django ORM is running!"}
-```
-
-In summary:
-
-You don't need the lifespan function if you don't have startup/shutdown tasks. Your app will run fine without it.
-If you do need to perform actions at application startup or shutdown, you must use the lifespan context manager pattern, and that function must be async def because the underlying ASGI protocol requires it, regardless of whether your individual route handlers are sync or async.
-The example provided with print statements was mainly boilerplate to show where you would put such logic if needed later.

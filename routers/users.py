@@ -1,14 +1,16 @@
-from datetime import timedelta
 from typing import Annotated
 
 from django.db.utils import IntegrityError
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, model_validator  # For request/response models
-from auth import Token
 
 from db_app.models import User as UserModel  # Rename to avoid Pydantic clash  # noqa: E402
-from utils import Payload, decode_access_token, get_hashed_password, is_correct_password, \
-    ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token  # noqa: E402
+from utils import (
+    Payload,
+    decode_access_token,
+    get_hashed_password,
+    is_correct_password,
+)  # noqa: E402
 
 router = APIRouter(
     prefix='/users',
@@ -122,19 +124,6 @@ def update_user(user_data: UserUpdate, current_user: Annotated[UserModel, Depend
     """Update an existing User by its ID."""
     updated_user = update_user_db(current_user, user_data)
     return updated_user
-
-@router.patch('/reset-password', response_model=Token)
-def update_user(reset_data: ResetPasswordRequest, current_user: Annotated[UserModel, Depends(get_current_user)]):
-    """Update an existing User by its ID."""
-    if not is_correct_password(reset_data.password, current_user.password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Incorrect details.')
-    new_password = get_hashed_password(reset_data.new_password)
-    current_user.password = new_password
-    current_user.save()
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={'email': current_user.email, 'id': current_user.id}, expires_delta=access_token_expires)
-    return Token(access_token=access_token)
 
 
 @router.delete('/', status_code=204)  # 204 No Content on success
