@@ -10,11 +10,6 @@ class AccountTypeEnum(Enum):
     OTHER = 'Other'
 
 
-class CategoryEnum(Enum):
-    INCOME = 'Income'
-    EXPENSE = 'Expense'
-
-
 class TransactionTypeEnum(Enum):
     INCOME = 'Income'
     EXPENSE = 'Expense'

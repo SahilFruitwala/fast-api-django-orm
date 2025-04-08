@@ -1,6 +1,6 @@
 from django.db import models
 
-from enums import AccountTypeEnum, CategoryEnum, TransactionTypeEnum
+from enums import AccountTypeEnum, TransactionTypeEnum
 
 
 class User(models.Model):
@@ -33,31 +33,13 @@ class Account(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
 
-class Category(models.Model):
-    """
-    Represents categories for income and expenses.
-    """
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
-    category_type = models.CharField(
-        max_length=10,
-        choices=[(tag.value, tag.name) for tag in CategoryEnum],
-        default=CategoryEnum.EXPENSE.value,
-    )
-    description = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
-
-
 class Transaction(models.Model):
     """
     Represents individual financial transactions.
     """
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions')
     date = models.DateField()
     amount = models.DecimalField(max_digits=15, decimal_places=2)
     description = models.TextField(blank=True, null=True)
@@ -67,11 +49,11 @@ class Transaction(models.Model):
         default=TransactionTypeEnum.EXPENSE.value,
     )
     transfer_account = models.ForeignKey(
-        'self',
+        Account,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='transfers',
+        related_name='outgoing_transfers',
     )
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -83,7 +65,6 @@ class Budget(models.Model):
     """
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
     amount = models.DecimalField(max_digits=15, decimal_places=2)

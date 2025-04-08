@@ -13,9 +13,11 @@ dependencies = [
     "fastapi>=0.115.12",
     "httpx>=0.28.1",
     "psycopg2-binary>=2.9.10",
+    "pyjwt>=2.10.1",
     "pytest>=8.3.5",
     "pytest-django>=4.11.1",
     "python-dotenv>=1.1.0",
+    "python-multipart>=0.0.20",
     "ruff>=0.11.3",
     "uvicorn[standard]>=0.34.0",
 ]
@@ -35,7 +37,6 @@ select = [
     "B",
     "UP",
     "YTT",
-    "S",
     "PGH",
     "SIM",
     "TID",
@@ -44,6 +45,7 @@ select = [
 ]
 ignore = [
     "S101",
+    "B904"
 ]
 
 [tool.ruff.format]
