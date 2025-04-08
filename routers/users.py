@@ -1,9 +1,14 @@
+from datetime import timedelta
+from typing import Annotated
+
 from django.db.utils import IntegrityError
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, model_validator  # For request/response models
+from auth import Token
 
 from db_app.models import User as UserModel  # Rename to avoid Pydantic clash  # noqa: E402
-from utils import get_hashed_password, is_correct_password  # noqa: E402
+from utils import Payload, decode_access_token, get_hashed_password, is_correct_password, \
+    ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token  # noqa: E402
 
 router = APIRouter(
     prefix='/users',
@@ -35,35 +40,18 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     name: str | None = None
     email: str | None = None
-    password: str | None = None
-    new_password: str | None = None
 
-    @model_validator(mode='before')
-    @classmethod
-    def validate_password(cls, values):
-        password = values.get('password')
-        new_password = values.get('new_password')
-        if new_password and not password:
-            raise ValueError('Password is required')
 
-        return values
+class ResetPasswordRequest(BaseModel):
+    password: str
+    new_password: str
 
 
 class User(UserBase):  # For response model
     id: int
 
     class ConfigDict:
-        # Allow ORM objects to be used directly
-        # Deprecated in Pydantic V2, use from_attributes=True
-        # orm_mode = True
         from_attributes = True  # Pydantic V2+
-
-
-# Read All
-def get_all_users_db() -> list[UserModel]:
-    # .all() is lazy, convert to list to execute the query
-    users = UserModel.objects.all()
-    return users
 
 
 # Create
@@ -75,19 +63,16 @@ def create_user_db(user_data: UserCreate) -> UserModel:
     return user
 
 
-# Read One
-def get_user_db(user_id: int) -> UserModel:
+def get_user_from_email(email: str) -> UserModel:
     try:
-        user = UserModel.objects.get(id=user_id)
+        user = UserModel.objects.get(email=email)
         return user
     except UserModel.DoesNotExist as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 # Update
-def update_user_db(user_id: int, user_data: UserUpdate) -> UserModel:
-    existing_user = get_user_db(user_id)
-
+def update_user_db(existing_user: UserModel, user_data: UserUpdate) -> UserModel:
     if user_data.new_password:
         if not is_correct_password(user_data.password, existing_user.password):
             raise HTTPException(status_code=400, detail='Password does not match.')
@@ -102,17 +87,21 @@ def update_user_db(user_id: int, user_data: UserUpdate) -> UserModel:
 
 
 # Delete
-def delete_user_db(user_id: int):
-    user = get_user_db(user_id)
+def delete_user_db(user: UserModel):
     user.delete()
-    return True  # Indicate success
+    return True
 
 
-@router.get('/', response_model=list[User])
-def read_users():
-    """Retrieve all users from the database."""
-    users = get_all_users_db()
-    return users
+def get_current_user(payload: Annotated[Payload, Depends(decode_access_token)]) -> UserModel:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail='Could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'},
+    )
+    user = get_user_from_email(payload.email)
+    if user is None:
+        raise credentials_exception
+    return user
 
 
 @router.post('/', response_model=User, status_code=201)
@@ -122,21 +111,33 @@ def create_user(user_in: UserCreate):
     return new_user
 
 
-@router.get('/{user_id}', response_model=User)
-def read_user(user_id: int):
-    """Retrieve a specific User by its ID."""
-    user = get_user_db(user_id)
-    return user
+@router.get('/me', response_model=User)
+def read_user(current_user: Annotated[UserModel, Depends(get_current_user)]):
+    """Retrieve a specific User by its email."""
+    return current_user
 
 
-@router.put('/{user_id}', response_model=User)
-def update_user(user_id: int, user_data: UserUpdate):
+@router.patch('/', response_model=User)
+def update_user(user_data: UserUpdate, current_user: Annotated[UserModel, Depends(get_current_user)]):
     """Update an existing User by its ID."""
-    updated_user = update_user_db(user_id, user_data)
+    updated_user = update_user_db(current_user, user_data)
     return updated_user
 
+@router.patch('/reset-password', response_model=Token)
+def update_user(reset_data: ResetPasswordRequest, current_user: Annotated[UserModel, Depends(get_current_user)]):
+    """Update an existing User by its ID."""
+    if not is_correct_password(reset_data.password, current_user.password):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Incorrect details.')
+    new_password = get_hashed_password(reset_data.new_password)
+    current_user.password = new_password
+    current_user.save()
 
-@router.delete('/{user_id}', status_code=204)  # 204 No Content on success
-def delete_user(user_id: int):
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(data={'email': current_user.email, 'id': current_user.id}, expires_delta=access_token_expires)
+    return Token(access_token=access_token)
+
+
+@router.delete('/', status_code=204)  # 204 No Content on success
+def delete_user(current_user: Annotated[UserModel, Depends(get_current_user)]):
     """Delete a User by its ID."""
-    return delete_user_db(user_id)
+    return delete_user_db(current_user)

@@ -42,7 +42,7 @@ class TransactionUpdate(BaseModel):
     transaction_type: Annotated[str, BeforeValidator(valid_transaction_type)] | None = None
     amount: Decimal | None = None
     description: str | None = None
-    date: datetime | None  = None
+    date: datetime | None = None
     from_account: int | None = None
     account_id: int
 

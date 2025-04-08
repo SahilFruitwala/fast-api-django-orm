@@ -5,7 +5,7 @@ dev:
 	uvicorn main:app --reload
 
 start:
-	uvicorn main:app --reload
+	uvicorn main:app
 
 # Command to run tests using pytest
 test:

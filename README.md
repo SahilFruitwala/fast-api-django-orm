@@ -223,3 +223,44 @@ curl -X GET "http://127.0.0.1:8000/users/999" \
 ```
 
 > Gemini 2.5 helped me in this setup.
+
+# If I am not using async method why do I need `asynccontextmanager` in my main.py:
+
+You are correct that if you aren't using asynchronous features in your route handlers (def instead of async def), you might wonder why an async function like the lifespan manager is present.
+
+Here's the breakdown:
+
+FastAPI/ASGI is Fundamentally Async: Even if your route handlers are standard def functions (which FastAPI runs in a thread pool), the FastAPI application itself, and the ASGI server (like Uvicorn) running it, operate on an asynchronous event loop.
+
+Lifespan Protocol is Async: The lifespan context manager hooks into the ASGI Lifespan Protocol. This protocol defines specific asynchronous messages that the server sends to the application upon startup and just before shutdown. To handle these messages correctly, the function designated as the lifespan manager must be an async def function capable of interacting with the async event loop.
+
+Purpose of Lifespan: Its purpose is to execute code exactly once when the application starts up (before it begins accepting any requests) and exactly once when the application is shutting down (after processing has stopped). Common uses include:
+
+Initializing Resources: Setting up database connection pools (though less common when using Django's built-in handling), loading machine learning models into memory, establishing connections to external message queues or caches.
+Cleaning Up Resources: Gracefully closing database connections, shutting down background tasks, saving state before exiting.
+Is it Mandatory? No. If your application does not require any specific setup or teardown logic that needs to run precisely at startup or shutdown, you absolutely do not need the lifespan function. You can remove the @asynccontextmanager, the lifespan function definition, and the lifespan=lifespan argument from your FastAPI app instantiation:
+
+```python
+# main.py
+
+# ... imports ...
+# os.environ.setdefault(...)
+# django.setup()
+# from users_router import router as users_api_router
+# Remove @asynccontextmanager and the lifespan function definition
+
+# Instantiate FastAPI without the lifespan argument
+app = FastAPI(title="FastAPI + Django ORM")
+
+app.include_router(users_api_router)
+
+@app.get("/")
+def root():
+    return {"message": "FastAPI (sync endpoints) with Django ORM is running!"}
+```
+
+In summary:
+
+You don't need the lifespan function if you don't have startup/shutdown tasks. Your app will run fine without it.
+If you do need to perform actions at application startup or shutdown, you must use the lifespan context manager pattern, and that function must be async def because the underlying ASGI protocol requires it, regardless of whether your individual route handlers are sync or async.
+The example provided with print statements was mainly boilerplate to show where you would put such logic if needed later.

@@ -1,6 +1,6 @@
-from datetime import datetime
 import os
 from collections.abc import Generator  # No AsyncGenerator needed
+from datetime import datetime
 from decimal import Decimal
 
 import django
@@ -18,7 +18,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 # --- Import your FastAPI app and models AFTER Django setup ---
-from db_app.models import Account, User, Transaction  # noqa: E402
+from db_app.models import Account, Transaction, User  # noqa: E402
 from main import app as fastapi_app  # noqa: E402
 from utils import get_hashed_password  # noqa: E402
 
@@ -69,6 +69,7 @@ def test_account(db, test_user: User) -> Account:  # noqa: ARG001
     )  #
     return account
 
+
 @pytest.fixture
 def test_transaction(test_user, test_account):
     return Transaction.objects.create(
@@ -76,6 +77,6 @@ def test_transaction(test_user, test_account):
         account=test_account,
         date=datetime.now().date(),
         amount=Decimal('50.00'),
-        description="Test Transaction",
+        description='Test Transaction',
         transaction_type=TransactionTypeEnum.EXPENSE.value,
     )
