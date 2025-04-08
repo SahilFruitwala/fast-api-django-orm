@@ -1,7 +1,7 @@
 [project]
-name = "fast-django"
+name = "fast-api-django-orm"
 version = "0.1.0"
-description = "Leverages FastAPI's speed and Django's robust ORM for building efficient Python web applications."
+description = "A complete FastAPI backend powered by Django ORM for database interactions. Includes secure authentication using JWT."
 readme = "README.md"
 requires-python = ">=3.13"
 
